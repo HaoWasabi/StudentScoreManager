@@ -1,0 +1,6 @@
+# Nhập thông tin sinh viên lần lượt theo hàng như chuỗi mẫu sau "2 | hao | 9"
+# !!! Cột chứ chuỗi "$student" và "student_id | name | score" không được thay đổi
+
+$student
+student_id | name | score
+2 | hao | 9
