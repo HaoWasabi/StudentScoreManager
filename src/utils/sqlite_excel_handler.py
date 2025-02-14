@@ -1,14 +1,19 @@
 import os
 import sqlite3
 import pandas as pd
+from bll.excel_bll import ExcelBLL
 
 base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # Lấy thư mục gốc của dự án
 db_path = os.path.join(base_dir, "db.sqlite3")
-default_excel_path = os.path.join(base_dir, "ClassManager.xlsx")
+if ExcelBLL().get_all():
+    excel_path = ExcelBLL().get_all()[0].get_path()  
+else:
+    excel_path = os.path.join(base_dir, "ClassManager.xlsx")
+    print("Excel path not found in database. Using default path.")
 
 class SQLiteExcelHandler:
     @staticmethod
-    def export_to_excel(excel_path: str = default_excel_path):
+    def export_to_excel(excel_path: str = excel_path):
         """
         Xuất dữ liệu từ SQLite ra file Excel.
         """
@@ -38,7 +43,7 @@ class SQLiteExcelHandler:
                 conn.close()
 
     @staticmethod
-    def import_from_excel(excel_path: str = default_excel_path, mode: str = "replace"):
+    def import_from_excel(excel_path: str = excel_path, mode: str = "replace"):
         """
         Nhập dữ liệu từ file Excel vào SQLite và xóa các student_id không tồn tại trong file Excel.
         """

@@ -21,12 +21,6 @@ class ExcelBLL(Singleton):
     def insert(self, excel: ExcelDTO) -> bool:
         return self.__excel_dal.insert(excel)
     
-    def update(self, excel: ExcelDTO) -> bool:
-        return self.__excel_dal.update(excel)
-    
-    def reset_all_score(self) -> bool:
-        return self.__excel_dal.reset_all_score()
-    
     def delete(self, path: int) -> bool:
         return self.__excel_dal.delete(path)
     

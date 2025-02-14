@@ -1,13 +1,16 @@
-import sqlite3
+import sqlite3, os
 from typing import Optional, List
 from dto.excel_dto import ExcelDTO
 from .base_dal import BaseDAL, logger
 
-class ExcelDAL:
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # Lấy thư mục gốc của dự án
+default_excel_path = os.path.join(base_dir, "ClassManager.xlsx")
+
+class ExcelDAL(BaseDAL):
     def __init__(self):
         super().__init__()
         
-    def create_table(self):
+    def create_table(self, excel_path = default_excel_path):
         try:
             self.open_connection()
             self.cursor.execute('''
@@ -15,6 +18,10 @@ class ExcelDAL:
                     path TEXT PRIMARY KEY
                 )
             ''')
+            self.connection.commit()
+            self.cursor.execute('''
+                INSERT INTO excel (path) VALUES (?)
+            ''', (excel_path,))
             self.connection.commit()
         except sqlite3.Error as e:
             logger.error(f"Error creating table excel: {e}")

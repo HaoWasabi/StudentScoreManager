@@ -1,22 +1,14 @@
 from bll.student_bll import StudentBLL
 from dto.student_dto import StudentDTO
-from utils.checker import Checker
 from utils.terminal_handler import TerminalHandler
 from utils.sqlite_excel_handler import SQLiteExcelHandler
 from utils.sqlite_text_handler import SQLiteTextHandler
-import sys
-import signal
+from .base_cli import BaseCLI
 
-class StudentCLI:
+class StudentCLI(BaseCLI):
     def __init__(self):
         self.__student_bll = StudentBLL()
-        TerminalHandler.clear()
-        signal.signal(signal.SIGINT, self.signal_handler)
-        self.run()
-        
-    def signal_handler(self, signum, frame):
-        print("Goodbye!")
-        sys.exit(0)
+        super().__init__()
         
     def run(self):
         while True:
