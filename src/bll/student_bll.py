@@ -36,3 +36,5 @@ class StudentBLL(Singleton):
     def get_by_id(self, student_id: int) -> Optional[StudentDTO]:
         return self.__student_dal.get_by_id(student_id)
     
+    def sort(self, by: str = "name", direction: str = "direction") -> List[StudentDTO]:
+        return self.__student_dal.sort(by, direction)

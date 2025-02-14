@@ -37,7 +37,8 @@ class StudentCLI(BaseCLI):
             elif choice == '5':
                 self.update_database_by_excel()
             elif choice == '6':
-                SQLiteExcelHandler().export_to_excel()
+                students = self.__student_bll.get_all()
+                SQLiteExcelHandler().export_to_excel(students=students)
             elif choice == '7':
                 self.reset_all_score()
             elif choice == '8':
@@ -116,6 +117,28 @@ class StudentCLI(BaseCLI):
         if students:
             for student in students:
                 print(student)
+                
+            while True:
+                choice = input("\nDo you want to sort this list? (y/n): ")
+                if choice == 'y':
+                    by = input("Enter column to sort by (name, score, last_name, first_name): ")
+                    direction = input("Enter direction to sort (ASC, DESC): ")
+                    TerminalHandler.clear()
+                    students = self.__student_bll.sort(by, direction)
+                    for student in students:
+                        print(student)
+                    
+                    while True:
+                        choice = input("Do you want to save this list to Excel? (y/n): ")
+                        if choice == 'y':
+                            SQLiteExcelHandler().export_to_excel(students=students)
+                            break
+                        elif choice == 'n':
+                            break
+                    
+                    break
+                elif choice == 'n':
+                    break
         else:
             print("No student found.")
             

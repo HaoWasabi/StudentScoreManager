@@ -2,6 +2,8 @@ import os
 import sqlite3
 import pandas as pd
 from bll.excel_bll import ExcelBLL
+from dto.student_dto import StudentDTO
+from typing import List
 
 base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # Lấy thư mục gốc của dự án
 db_path = os.path.join(base_dir, "db.sqlite3")
@@ -13,34 +15,44 @@ else:
 
 class SQLiteExcelHandler:
     @staticmethod
-    def export_to_excel(excel_path: str = excel_path):
+    def export_to_excel(students: List[StudentDTO], excel_path: str = excel_path):
         """
-        Xuất dữ liệu từ SQLite ra file Excel.
+        Xuất danh sách sinh viên ra file Excel:
+        - Nếu file Excel chưa tồn tại: Ghi toàn bộ danh sách vào file mới.
+        - Nếu file đã tồn tại: Cập nhật sinh viên có `student_id` trùng hoặc thêm mới nếu chưa có.
         """
         try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student';")
-            table = cursor.fetchone()
-
-            if not table:
-                print("⚠ Table 'student' not found in the database.")
+            if not students:
+                print("⚠ No data to export.")
                 return
 
-            with pd.ExcelWriter(excel_path, engine="xlsxwriter") as writer:
-                df = pd.read_sql_query("SELECT * FROM student", conn)
-                if df.empty:
-                    print("⚠ Skipping table 'student' (No data found).")
-                else:
-                    df.to_excel(writer, sheet_name='student', index=False)
-                    print("✅ Successfully exported table 'student' to sheet 'student'.")
+            # Chuyển danh sách StudentDTO thành DataFrame
+            new_data = pd.DataFrame({
+                "student_id": [s.get_student_id() for s in students],
+                "name": [s.get_name() for s in students],
+                "score": [s.get_score() for s in students],
+            })
 
-            print(f"🎉 Export completed: Data from {db_path} has been saved to {excel_path}")
+            # Kiểm tra nếu file Excel đã tồn tại
+            if os.path.exists(excel_path):
+                existing_data = pd.read_excel(excel_path, sheet_name="student")
+                
+                # Đảm bảo cột student_id là kiểu số để tránh lỗi merge
+                existing_data["student_id"] = existing_data["student_id"].astype(int)
+                
+                # Hợp nhất dữ liệu, ưu tiên thông tin mới nhất
+                merged_data = pd.concat([existing_data, new_data]).drop_duplicates(subset=["student_id"], keep="last")
+            else:
+                merged_data = new_data  # Nếu chưa có file, dùng dữ liệu mới
+
+            # Xuất dữ liệu ra file Excel
+            with pd.ExcelWriter(excel_path, engine="xlsxwriter") as writer:
+                merged_data.to_excel(writer, sheet_name="student", index=False)
+                print("✅ Successfully updated student data in Excel.")
+
+            print(f"🎉 Export completed: Data has been saved to {excel_path}")
         except Exception as e:
             print(f"❌ Error during export: {e}")
-        finally:
-            if conn:
-                conn.close()
 
     @staticmethod
     def import_from_excel(excel_path: str = excel_path, mode: str = "replace"):
