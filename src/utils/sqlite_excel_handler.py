@@ -36,9 +36,9 @@ class SQLiteExcelHandler:
         finally:
             if conn:
                 conn.close()
-    
+
     @staticmethod
-    def import_from_excel(excel_path: str = default_excel_path):
+    def import_from_excel(excel_path: str = default_excel_path, mode: str = "replace"):
         """
         Nhập dữ liệu từ file Excel vào SQLite và xóa các student_id không tồn tại trong file Excel.
         """
@@ -71,18 +71,20 @@ class SQLiteExcelHandler:
                 ON CONFLICT(student_id) DO UPDATE SET {update_clause}
             """
             cursor.executemany(query, df.values.tolist())
-            conn.commit()
             
-            # Xóa các student_id trong database không tồn tại trong file Excel
-            student_ids_in_excel = tuple(df['student_id'].tolist())
-            if student_ids_in_excel:
-                cursor.execute(f"DELETE FROM student WHERE student_id NOT IN ({', '.join(['?'] * len(student_ids_in_excel))})", student_ids_in_excel)
-                conn.commit()
-                print("✅ Removed students not found in Excel.")
+            if mode == "replace":
+                # Xóa các student_id trong database không tồn tại trong file Excel
+                student_ids_in_excel = tuple(df['student_id'].tolist())
+                if student_ids_in_excel:
+                    cursor.execute(f"DELETE FROM student WHERE student_id NOT IN ({', '.join(['?'] * len(student_ids_in_excel))})", student_ids_in_excel)
+                    print("✅ Removed students not found in Excel.")
 
+            conn.commit()
             print("✅ Successfully imported sheet 'student' into table 'student'.")
+        
         except Exception as e:
             print(f"❌ Error during import: {e}")
+        
         finally:
             if conn:
                 conn.close()

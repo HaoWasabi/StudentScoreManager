@@ -21,7 +21,7 @@ class StudentCLI:
     def run(self):
         while True:
             print('''\n
-            Student menu:
+            Students manager menu:
                 1. List students
                 2. Find Student
                 3. Insert student
@@ -41,9 +41,9 @@ class StudentCLI:
             elif choice == '3':
                 self.insert()
             elif choice == '4':
-                SQLiteTextHandler().import_from_text()
+                self.update_database_by_text()
             elif choice == '5':
-                SQLiteExcelHandler().import_from_excel()
+                self.update_database_by_excel()
             elif choice == '6':
                 SQLiteExcelHandler().export_to_excel()
             elif choice == '7':
@@ -55,8 +55,8 @@ class StudentCLI:
                 
     def mini_menu(self, student_id: int):
         while True:
-            print('''\n
-            Teacher menu:
+            print(f'''\n
+            Student info menu:
                 1. Update student
                 2. Delete student
                 3. Back
@@ -72,9 +72,51 @@ class StudentCLI:
                 break
             elif choice == '3':
                 break
+            
+    def update_database_by_text(self):
+        while True:
+            print('''\n
+            Updating database by text menu:
+                1. Replace by text
+                2. Squash by text
+                3. Back
+            ''')
+            choice = input("Enter your choice: ")
+            TerminalHandler.clear()
+            
+            if choice == '1':
+                SQLiteTextHandler().import_from_text(mode="replace")
+                break
+            elif choice == '2':
+                SQLiteTextHandler().import_from_text(mode="squash")
+                break
+            elif choice == '3':
+                break
             else:
                 print("Invalid choice. Please try again.")
+                
+    def update_database_by_excel(self):
+        while True:
+            print('''\n
+            Updating database by excel menu:
+                1. Replace by excel
+                2. Squash by excel
+                3. Back
+            ''')
+            choice = input("Enter your choice: ")
+            TerminalHandler.clear()
             
+            if choice == '1':
+                SQLiteExcelHandler().import_from_excel(mode="replace")
+                break
+            elif choice == '2':
+                SQLiteExcelHandler().import_from_excel(mode="squash")
+                break
+            elif choice == '3':
+                break
+            else:
+                print("Invalid choice. Please try again.")
+                
     def get_all(self):
         TerminalHandler.clear()
         students = self.__student_bll.get_all()
@@ -119,7 +161,7 @@ class StudentCLI:
         
         student = self.__student_bll.get_by_id(student_id)
         if name == '-': name = student.get_name()
-        if score == '-': score = student.get_score()
+        if score == '-': score = str(student.get_score())
         
         if self.is_valid_update(name, score):
             student = StudentDTO(student_id, name, int(score))
