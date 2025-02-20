@@ -14,7 +14,7 @@ class StudentDAL(BaseDAL):
                 CREATE TABLE IF NOT EXISTS student (
                     student_id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL,
-                    score INTEGER DEFAULT 0
+                    score REAL DEFAULT 0
                 )
             ''')
             self.connection.commit()
@@ -115,5 +115,34 @@ class StudentDAL(BaseDAL):
         except sqlite3.Error as e:
             logger.error(f"Error getting student by id: {e}")
             return None
+        finally:
+            self.close_connection()
+            
+    def sort(self, by: str = "name", direction: str = "ASC") -> List["StudentDTO"]:
+        try:
+            self.open_connection()
+            
+            # Danh sách cột hợp lệ
+            valid_columns = ["student_id", "name", "score", "last_name", "first_name"]
+            if by not in valid_columns:
+                by = "name"
+            if direction not in ["ASC", "DESC"]:
+                direction = "ASC"
+
+            # Trường hợp đặc biệt: Sắp xếp theo họ hoặc tên chính
+            if by == "last_name":
+                order_clause = "SUBSTR(name, 1, INSTR(name || ' ', ' ') - 1)"
+            elif by == "first_name":
+                order_clause = "SUBSTR(name, LENGTH(name) - INSTR(REVERSE(name) || ' ', ' ') + 2)"
+            else:
+                order_clause = by  # student_id, score, name vẫn giữ nguyên
+
+            # Thực thi truy vấn SQL
+            self.cursor.execute(f'''SELECT * FROM student ORDER BY {order_clause} {direction}''')
+            return [StudentDTO(*student) for student in self.cursor.fetchall()]
+
+        except sqlite3.Error as e:
+            logger.error(f"Error sorting students: {e}")
+            return []
         finally:
             self.close_connection()

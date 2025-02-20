@@ -1,81 +1,72 @@
 import os
 import sqlite3
+from bll.file_bll import FileBLL
+from .default import *
 
-base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-db_path = os.path.join(base_dir, "db.sqlite3")
-default_text_path = os.path.join(base_dir, "ClassManager.txt")
+text = FileBLL().get_by_id(1)
+if text:
+    text_path = text.get_path()
+else:
+    text_path = default_text_path
+    print("Text path not found in database. Using default text path.")
 
 class SQLiteTextHandler:
     @staticmethod
-    def import_from_text(text_path: str = default_text_path):
+    def import_from_text(text_path: str = text_path, mode: str = "replace"):
         try:
-            conn = sqlite3.connect(db_path)
+            conn = sqlite3.connect(default_db_path)
             cursor = conn.cursor()
             
             with open(text_path, "r", encoding="utf-8") as file:
-                lines = file.readlines()
-                
-            table_name = None
-            columns = []
-            data = []
-            student_ids = set()
-            
+                lines = [line.strip() for line in file if line.strip() and not line.startswith("#")]
+
+            table_name, columns, data = None, [], []
             for line in lines:
-                line = line.strip()
-                if line.startswith("#") or not line:
-                    continue
-                
                 if line.startswith("$"):
-                    table_name = line[1:].strip()
-                    if table_name.lower() != "student":
+                    table_name = line[1:].strip().lower()
+                    if table_name != "student":
                         table_name = None
                     else:
-                        columns = []
-                        data = []
-                        student_ids = set()
+                        columns, data = [], []
                 elif table_name:
-                    values = line.split("|")
+                    values = [val.strip() for val in line.split("|")]
                     if not columns:
-                        columns = [col.strip() for col in values]
+                        columns = values
                     else:
-                        student_ids.add(values[0].strip())  # Lấy student_id
-                        data.append([val.strip() for val in values])
+                        data.append(values)
             
             if table_name == "student" and data:
-                SQLiteTextHandler._upsert_student_data(cursor, columns, data, student_ids)
+                SQLiteTextHandler._upsert_student_data(cursor, columns, data, mode)
             
             conn.commit()
-            print(f"🎉 Import completed: Data from {text_path} has been added to {db_path}")
+            print(f"🎉 Import completed: Data from {text_path} has been added to {default_db_path}")
         except Exception as e:
             print(f"❌ Error during import: {e}")
         finally:
-            if conn:
-                conn.close()
-    
+            conn.close()
+
     @staticmethod
-    def _upsert_student_data(cursor, columns, data, student_ids):
+    def _upsert_student_data(cursor, columns, data, mode):
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS student (
                 student_id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                score INTEGER DEFAULT 0
+                score REAL DEFAULT 0
             )
         """)
-        
+
         placeholders = ', '.join(['?' for _ in columns])
-        update_clause = ', '.join([f'{col}=excluded.{col}' for col in columns if col != "student_id"])
-        
+        update_clause = ', '.join([f"{col}=excluded.{col}" for col in columns if col != "student_id"])
+
         query = f"""
-            INSERT INTO student ({', '.join(columns)})
-            VALUES ({placeholders})
+            INSERT INTO student ({', '.join(columns)}) VALUES ({placeholders})
             ON CONFLICT(student_id) DO UPDATE SET {update_clause}
         """
-        
+
         cursor.executemany(query, data)
-        
-        # Xóa các sinh viên không có trong file text
-        cursor.execute("DELETE FROM student WHERE student_id NOT IN ({})".format(
-            ','.join('?' * len(student_ids))
-        ), tuple(student_ids))
-        
-        print(f"✅ Successfully upserted data into table 'student' and removed missing records.")
+
+        if mode == "replace":
+            student_ids = tuple(row[0] for row in data)
+            cursor.execute(f"DELETE FROM student WHERE student_id NOT IN ({','.join('?' * len(student_ids))})", student_ids)
+
+        print(f"✅ Successfully {'replaced' if mode == 'replace' else 'synchronized'} student data.")

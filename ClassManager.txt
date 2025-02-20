@@ -2,5 +2,5 @@
 # !!! Cột chứ chuỗi "$student" và "student_id | name | score" không được thay đổi
 
 $student
-student_id | name | score
-2 | hao | 9
+student_id  |   name    |   score
+12345   |   Nguyễn Văn A    |   9.25

@@ -1,5 +1,5 @@
 class StudentDTO:
-    def __init__(self, student_id: int, name: str, score: int = 0):
+    def __init__(self, student_id: int, name: str, score: float = 0.0):
         self.__student_id = student_id
         self.__name = name
         self.__score = score
@@ -22,5 +22,5 @@ class StudentDTO:
     def set_name(self, name: str):
         self.__name = name
         
-    def set_score(self, score: int):
+    def set_score(self, score: float):
         self.__score = score
